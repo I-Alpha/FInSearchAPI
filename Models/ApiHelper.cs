@@ -8,32 +8,38 @@ using System.Threading.Tasks;
 
 namespace FInSearchAPI.Models
 {
-    public  static class ApiHelper
+    public   class ApiHelper
     {
-        public static HttpClient ApiClient { get; set; } = new HttpClient();
 
-        public static void initializeClient()
-        {
+        public readonly RestClient RestClient ;
+        public readonly HttpClient HttpClient ;
 
-            ApiClient = new HttpClient();
-            ApiClient.DefaultRequestHeaders.Accept.Clear();
-            ApiClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("appication/json"));
-            ApiClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("appication/ld+json"));
-            ApiClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("text/html"));
-            ApiClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/xhtml+xml"));
-            ApiClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/xml"));
-            ApiClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("multipart/form-data"));
-            //PermID fields
+        public ApiHelper() {
 
-            //OpenFigi fields
-
+            initializeClients();                    
+            HttpClient = new HttpClient();
+            RestClient = new RestClient();
         }
-/*
-        public static HttpClient getClient()
-        {
-            var temp = ApiClient;
-            initializeClient();
-            return temp;
-        }*/
-    }
+
+        private readonly Dictionary<string,string> headers = new Dictionary<string, string>(){
+                          {"json","appication/json" }
+                        , {"json-ld","appication/ld+json" }
+                        , {"html","text/html" }
+                        , {"xml","application/xhtml+xml" }
+                        , {"form-data","multipart/form-data" }
+        };
+
+        private void initializeClients(){
+
+            //RestClient
+            RestClient.AddDefaultHeaders(headers);
+
+            //httpClient
+            foreach (var item in headers) 
+              HttpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue(item.Value));
+
+  
+        }
+    
+}
 }

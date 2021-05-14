@@ -1,45 +1,61 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
+using System.Threading.Tasks; 
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using FinSearchDataAccessLibrary.Models.Database;
 using FinSearchDataAcessLibrary.DataAccess;
+using FInSearchAPI.Handlers;
+using MediatR;
+using System.Threading;
+using Microsoft.Extensions.Logging;
+using System;
 
-namespace FInSearchAPI.Controllers
+namespace FInSearchAPI.Commands
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class CompaniesController : ControllerBase
+    public class CompanyLevelController : ControllerBase
     {
-        private readonly FinSearchDBContext _context;
+        #region fields
+        private readonly FinSearchDBContext context;
+        private readonly ILogger<CompanyLevelController> Logger;
+        private readonly GetCompanyLevelInfoCommandHandler GetCompanyLevelInfoCommandHandler;
+        #endregion
 
-        public CompaniesController(FinSearchDBContext context)
+        #region Contructor
+
+        public CompanyLevelController(ILogger<CompanyLevelController> _Logger, FinSearchDBContext _context, GetCompanyLevelInfoCommandHandler _GetCompanyLevelInfoCommandHandler)
         {
-            _context = context;
+            context = _context ?? throw new ArgumentNullException(nameof(_context)); ;
+            GetCompanyLevelInfoCommandHandler = _GetCompanyLevelInfoCommandHandler ?? throw new ArgumentNullException(nameof(_GetCompanyLevelInfoCommandHandler)); ;
+            Logger = _Logger ?? throw new ArgumentNullException(nameof(_Logger)); ;
         }
+        #endregion
 
+        #region Methods 
         // GET: api/Companies
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Company>>> GetCompanies()
         {
-            return await _context.Companies.ToListAsync();
+            return await context.Companies.ToListAsync();
         }
 
         // GET: api/Companies/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<Company>> GetCompany(string id)
+        public async Task<IActionResult> GetCompanyLevelInfo([FromBody] GetCompanyLevelInfoCommand command, CancellationToken cancellationToken = default)
         {
-            var company = await _context.Companies.FindAsync(id);
 
-            if (company == null)
-            {
-                return NotFound();
-            }
 
-            return company;
+            if (command == null)
+                throw new ArgumentNullException(nameof(command)); 
+            
+            var res = await GetCompanyLevelInfoCommandHandler.Handle(command, cancellationToken);
+          
+            if (res != null)
+                return Ok(res);
+      
+            return Ok(1); 
         }
 
         // PUT: api/Companies/5
@@ -52,11 +68,11 @@ namespace FInSearchAPI.Controllers
                 return BadRequest();
             }
 
-            _context.Entry(company).State = EntityState.Modified;
+            context.Entry(company).State = EntityState.Modified;
 
             try
             {
-                await _context.SaveChangesAsync();
+                await context.SaveChangesAsync();
             }
             catch (DbUpdateConcurrencyException)
             {
@@ -78,10 +94,10 @@ namespace FInSearchAPI.Controllers
         [HttpPost]
         public async Task<ActionResult<Company>> PostCompany(Company company)
         {
-            _context.Companies.Add(company);
+            context.Companies.Add(company);
             try
             {
-                await _context.SaveChangesAsync();
+                await context.SaveChangesAsync();
             }
             catch (DbUpdateException)
             {
@@ -102,21 +118,23 @@ namespace FInSearchAPI.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteCompany(string id)
         {
-            var company = await _context.Companies.FindAsync(id);
+            var company = await context.Companies.FindAsync(id);
             if (company == null)
             {
                 return NotFound();
             }
 
-            _context.Companies.Remove(company);
-            await _context.SaveChangesAsync();
+            context.Companies.Remove(company);
+            await context.SaveChangesAsync();
 
             return NoContent();
         }
 
         private bool CompanyExists(string id)
         {
-            return _context.Companies.Any(e => e.OrganizationName == id);
+            return context.Companies.Any(e => e.OrganizationName == id);
         }
+
+        #endregion
     }
 }

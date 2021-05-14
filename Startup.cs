@@ -10,6 +10,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System.Net.Http;
+using Microsoft.OpenApi.Models;
 
 namespace FInSearchAPI
 {
@@ -18,7 +19,6 @@ namespace FInSearchAPI
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
-            ApiHelper.initializeClient();
         }
         public IConfiguration Configuration { get; }
 
@@ -27,10 +27,15 @@ namespace FInSearchAPI
         { 
             services.AddDbContext<FinSearchDBContext>(options =>
             options.UseSqlServer(Configuration.GetConnectionString("FinDBContext")));
-            services.AddHttpClient<IService, PermIDService>(client => client = ApiHelper.ApiClient); 
-            services.AddHttpClient<IService, OpenFigiService>(client => client = ApiHelper.ApiClient);
-            services.AddHttpClient<IService, MappingSevice>(client => client = ApiHelper.ApiClient);
+            
+
+            services.AddSingleton(new ApiHelper());
+            services.AddScoped<IService, PermIDService>();
+            services.AddScoped<IService, OpenFigiService>();
+            services.AddScoped<IService, MappingService>();
+
             services.AddControllers();
+            services.AddSwaggerGen();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -39,6 +44,12 @@ namespace FInSearchAPI
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
+                app.UseSwagger();
+                app.UseSwaggerUI(c =>
+                {
+                    c.SwaggerEndpoint("/swagger/v1/swagger.json", "My API V1");
+                });
+
             }
             else
             {

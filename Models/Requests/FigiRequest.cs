@@ -1,11 +1,10 @@
 ﻿
-using FInSearchAPI.Interfaces;
 using FinSearchDataAccessLibrary.Models;
 using Newtonsoft.Json;
  
 namespace FInSearchAPI.Models.Requests
 {
-    public class FigiRequest :Entity , IRequest 
+    public class FigiRequest :Entity 
     {
         public FigiRequest()
         {

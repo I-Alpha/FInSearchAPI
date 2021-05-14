@@ -6,6 +6,8 @@ using FinSearchDataAccessLibrary.Interfaces;
 using FinSearchDataAccessLibrary.Models;
 using FinSearchDataAccessLibrary.Models.Database;
 using FinSearchDataAccessLibrary.Handlers;
+using FInSearchAPI.Models;
+using RestSharp;
 
 namespace FInSearchAPI.Services
 {
@@ -13,7 +15,8 @@ namespace FInSearchAPI.Services
     public class PermIDService : Service  
     {
         public int Id { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-        private readonly HttpClient APIClient;
+
+        private readonly HttpClient ApiClient;
 
         private static new IEntityHandler EntityHandler = new EntityHandler();
 
@@ -26,10 +29,10 @@ namespace FInSearchAPI.Services
         private string SearchAPIUrlParameters { get { return SearchAPIBaseUrl + "search?" + "format=json" + "&" + APIToken; } }
       
 
-        public PermIDService(HttpClient _httpClient)
+        public PermIDService(ApiHelper _ApiHelper)
         {
-            APIClient= _httpClient; 
-            APIClient.DefaultRequestHeaders.Add("X-AG-Access-Token".ToLower(), "BXCqymrCagItruFZ1V8LppWLY9zXWWpV");
+            ApiClient = _ApiHelper.HttpClient;
+            ApiClient.DefaultRequestHeaders.Add("X-AG-Access-Token".ToLower(), "BXCqymrCagItruFZ1V8LppWLY9zXWWpV");
 
 
         }
@@ -37,7 +40,7 @@ namespace FInSearchAPI.Services
         public async Task<string> SearchAsync(string searchString)
         {
             var processedsearchString = SearchAPIUrlParameters + "&q=" + searchString.ToLower();
-            HttpResponseMessage response = APIClient.GetAsync(processedsearchString).Result;
+            HttpResponseMessage response = ApiClient.GetAsync(processedsearchString).Result;
             if (response.IsSuccessStatusCode)
             {
                 // Parse the response body.
@@ -52,16 +55,10 @@ namespace FInSearchAPI.Services
             }
         }
         public async Task<string> LookUpByIdAsync(string ID)
-        {
-            if (ID.Length < 10 || ID.Length > 12)
-                return "fail";
-
-            if (!(ID[0] == '1' && ID[1] == '-')) ID = "1-" + ID;
-            else if ((ID[0] == '-' && ID[1] != '-')) ID = "1" + ID;
-
+        {        
 
             var processedsearchString = LookUpAPIBaseUrl + ID + LookUpAPIUrlParameters;
-            HttpResponseMessage response = APIClient.GetAsync(processedsearchString).Result;
+            HttpResponseMessage response = ApiClient.GetAsync(processedsearchString).Result;
 
             if (response.IsSuccessStatusCode)
             {
@@ -107,7 +104,7 @@ namespace FInSearchAPI.Services
 
                 string quotePermId = ExtractPermIDFromUrl(quoteUrl);
                 var json = await LookUpByIdAsync(quotePermId);
-                return   ((Interfaces.IService)this).CreateObjectFromJson(json);                            
+                return  CreateObjectFromJson(json);                            
         }
 
         private string ExtractPermIDFromUrl(string Url)

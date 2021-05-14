@@ -1,4 +1,5 @@
-﻿using FInSearchAPI.Models.Requests; 
+﻿using FInSearchAPI.Models;
+using FInSearchAPI.Models.Requests; 
 using FInSearchAPI.Models.Responses;
 using FinSearchDataAccessLibrary;
 using FinSearchDataAccessLibrary.Handlers;
@@ -37,9 +38,9 @@ namespace FInSearchAPI.Services
                                                     }; 
 
         public string getParamString(string type) => v3ApiUrls[type];
-        public OpenFigiService(HttpClient _httpClient)
+        public OpenFigiService(ApiHelper _ApiHelper)
         {
-            apiClient = new RestClient("https://api.openfigi.com/{segment}");
+            apiClient = _ApiHelper.RestClient; 
             apiClient.BaseUrl = new Uri(ApiBaseUrl); 
         }
 
@@ -90,9 +91,8 @@ namespace FInSearchAPI.Services
         public async Task<IRestResponse<List<FigiArrayResponse>>> MapAsync(List<FigiRequest> ObjRequest)
         {
             apiClient.BaseUrl = new Uri("https://api.openfigi.com/v3/mapping");
-            var request = new RestRequest(Method.POST).AddUrlSegment("segment", getParamString("map"));
-
-            request.RequestFormat = DataFormat.Json;
+            var request = new RestRequest(Method.POST);
+             
             request.AddHeader("Content-Type", "text/json");
             request.AddJsonBody(ObjRequest);
             request.JsonSerializer = JsonSerializer;

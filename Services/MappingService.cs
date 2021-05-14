@@ -12,23 +12,24 @@ using FinSearchDataAccessLibrary;
 using FinSearchDataAccessLibrary.Interfaces;
 using FinSearchDataAccessLibrary.Handlers;
 using FInSearchAPI.Models.Requests;
+using FInSearchAPI.Models;
 
 namespace FInSearchAPI.Services
 {
-    public class MappingSevice : Service
+    public class MappingService : Service
     {
-        private static OpenFigiService OpenFigiService { get; set; } 
-        private static PermIDService PermIDService { get; set; }
-        private readonly FinSearchDBContext FinSearchDbContext;
-        private static Stream Filestream { get; set; }
-        public MappingSevice(OpenFigiService _OpenFigiService, PermIDService _PermIDService , FinSearchDBContext _context)
+        private readonly OpenFigiService OpenFigiService;
+        private readonly PermIDService PermIDService;
+        private readonly FinSearchDBContext FinSearchDbContext; 
+
+        public MappingService(OpenFigiService _OpenFigiService, PermIDService _PermIDService , FinSearchDBContext _context)
         {
             OpenFigiService = _OpenFigiService;
             PermIDService = _PermIDService;
             FinSearchDbContext = _context;
         }
          
-        public MappingSevice(FinSearchDBContext _context)
+        public MappingService(FinSearchDBContext _context)
         {
             FinSearchDbContext = _context;
         }
@@ -38,34 +39,29 @@ namespace FInSearchAPI.Services
 
             if (!_company.IsComplete())
             {
-                var t =  PermIDService.LookUpByIdAsync(_company.PermId).Result;
-                var ti= ((Interfaces.IService)this).CreateObjectFromJson(t)  ;
-                _company = (Company)ti;
+                var entityjson=  PermIDService.LookUpByIdAsync(_company.PermId).Result;
+                _company  =  (Company)CreateObjectFromJson(entityjson)  ;
                 _company.PrimaryQuote = (Quote)await PermIDService.GetQuoteAsync(_company);
                 _company.OpenFigiEntry = GetFigiForCompanyAsync(_company).Result; 
-                _company.CompositeCode = await GetCompositCodeAsync(_company.PrimaryQuote.MIC);
-               
+                _company.CompositeCode = await GetCompositCodeAsync(_company.PrimaryQuote.MIC);               
             }
 
             return _company; 
        
         } 
          
-
-        Stream ExcelStream;
         public async Task<string> GetCompositCodeAsync(string _mic) {
              
-            using (FinSearchDbContext) {
-
+            using (FinSearchDbContext) 
+            {
                 var qry = from LookUpRow in FinSearchDbContext.BloomBergLookUp
                           where LookUpRow.MIC == _mic
                           select   LookUpRow.CompositeCode ;
-
-                var q=  qry.FirstOrDefault(); 
-                   
+                var q=  qry.FirstOrDefault();                    
                 return q;
             } 
         }
+
         public async Task<Figi> GetFigiForCompanyAsync(Company _Company)
         {
             //Company to figi obj for post request
@@ -75,7 +71,7 @@ namespace FInSearchAPI.Services
                 new FigiRequest("TICKER", "MSFT").WithExchangeCode("US").WithMarketSectorDescription("Equity")
             };
 
-            var response = await OpenFigiService.MapAsync(list);
+            var response = await OpenFigiService.MapAsync(FigiRequestObj);
 
             foreach (var dataInstrument in response.Data)
                 if (dataInstrument.Data != null && dataInstrument.Data.Any())

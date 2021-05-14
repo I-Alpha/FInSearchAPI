@@ -11,8 +11,8 @@ namespace FInSearchAPI
 
         public static void  Main(string[] args)
         {
-            ApiHelper.initializeClient(); 
-            /*CreateHostBuilder(args).Build().Run();*/ 
+
+            CreateHostBuilder(args).Build().Run();
         }
     
 

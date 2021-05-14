@@ -8,7 +8,6 @@ namespace FInSearchAPI.Interfaces
     {
 
         public string Type { get; set; }
-
-        public Entity CreateObjectFromJson(string json);
+         
     }
 }
