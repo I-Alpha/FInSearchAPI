@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using FinSearchDataAccessLibrary.Models.Database;
@@ -10,20 +8,29 @@ using FinSearchDataAcessLibrary.DataAccess;
 using Microsoft.Extensions.Logging;
 using FInSearchAPI.Handlers;
 using System.Threading;
-using FInSearchAPI.Controllers.Commands;
+using FInSearchAPI.Commands;
+using MediatR;
 
 namespace FInSearchAPI.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("FinSearch/[controller]")]
     [ApiController]
     public class SecurityLevelController : ControllerBase
     {
         #region fields
         private readonly FinSearchDBContext Context;
-        private readonly GetSecurityLevelInfoCommandHandler GetSecurityLevelInfoCommandHandler;
+        private readonly IRequestHandler<GetSecurityLevelInfoCommand, IEnumerable<Figi>> GetSecurityLevelInfoCommandHandler;
         private readonly ILogger Logger;
+
+        public SecurityLevelController(ILogger _Logger, FinSearchDBContext _context, IRequestHandler<GetSecurityLevelInfoCommand, IEnumerable<Figi>> _GetSecurityLevelInfoCommandHandler)
+        {
+             
+            Context = _context ?? throw new ArgumentNullException(nameof(_context)); ;
+            GetSecurityLevelInfoCommandHandler = _GetSecurityLevelInfoCommandHandler ?? throw new ArgumentNullException(nameof(_GetSecurityLevelInfoCommandHandler)); ;
+            Logger = _Logger ?? throw new ArgumentNullException(nameof(_Logger)); ;
+        }
         #endregion
-         
+
 
 
         #region Methods        

@@ -15,10 +15,10 @@ namespace FInSearchAPI.Models
         public readonly HttpClient HttpClient ;
 
         public ApiHelper() {
-
-            initializeClients();                    
+   
             HttpClient = new HttpClient();
             RestClient = new RestClient();
+            initializeClients();                 
         }
 
         private readonly Dictionary<string,string> headers = new Dictionary<string, string>(){

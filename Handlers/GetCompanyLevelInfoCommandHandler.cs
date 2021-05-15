@@ -1,57 +1,77 @@
-﻿using FInSearchAPI.Handlers;
+﻿using FInSearchAPI.Commands;
 using FInSearchAPI.Interfaces;
 using FInSearchAPI.Services;
 using FinSearchDataAccessLibrary.Models.Database;
 using FinSearchDataAcessLibrary.DataAccess;
 using FluentValidation;
 using MediatR;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace FInSearchAPI.Handlers
 {
-    public class GetCompanyLevelInfoCommandHandler : IRequestHandler<GetCompanyLevelInfoCommand, Company>
+    public class GetCompanyLevelInfoCommandHandler : IRequestHandler<GetCompanyLevelInfoCommand, IEnumerable<Company>>
     {
         #region Fields        
         private readonly FinSearchDBContext DbContext;
         private readonly IValidator<GetCompanyLevelInfoCommand> Validator;
-        private readonly ILogger Logger;
+        private readonly ILogger<GetCompanyLevelInfoCommandHandler> Logger;
         private readonly MappingService MappingService;
         #endregion
 
         #region Constructors
-        public GetCompanyLevelInfoCommandHandler(FinSearchDBContext _DbContext,ILogger<GetCompanyLevelInfoCommand> _Logger,IValidator<GetCompanyLevelInfoCommand>_Validator, MappingService _MappingService)
+        public GetCompanyLevelInfoCommandHandler(FinSearchDBContext _DbContext, ILogger<GetCompanyLevelInfoCommandHandler>  _Logger, IValidator<GetCompanyLevelInfoCommand> _Validator, MappingService _MappingService)
         {
-            DbContext = _DbContext ?? throw new ArgumentNullException(nameof(_DbContext)); 
+            DbContext = _DbContext ?? throw new ArgumentNullException(nameof(_DbContext));
             Validator = _Validator ?? throw new ArgumentNullException(nameof(_Validator));
             Logger = _Logger ?? throw new ArgumentNullException(nameof(_Logger));
-            MappingService = _MappingService;
+            MappingService = _MappingService ?? throw new ArgumentNullException(nameof(_MappingService)); ;
         }
         #endregion
-   
+
         #region Methods 
-        public async Task<Company> Handle(GetCompanyLevelInfoCommand request, CancellationToken cancellationToken )
+        public async Task<IEnumerable<Company>> Handle(GetCompanyLevelInfoCommand request, CancellationToken cancellationToken)
         {
 
-            if (request == null) 
-               throw new ArgumentNullException(nameof(request));
+            if (request == null)
+                throw new ArgumentNullException(nameof(request));
 
             //validate id 
-            var res = Validator.Validate(request);
+            var res =   Validator.Validate(request);
+            var company = new Company();
+            var results = new List<Company>();
 
-           //perform logic 
-            var company =   await DbContext.Companies.FindAsync(res);
-            if (company == null)
-            {
-                company = await MappingService.GetInfoForEntry(company);              
-                
-            }
-            return company;
+            if (res.IsValid)
+            //perform logic 
+            { 
+                //checked if company exists
+                if (CompanyExists(request.id))
+                {
+                    results = DbContext.Companies.Where(x=> x.PermId == request.id).ToList();
+                }
+                if (results == null)
+                {
+                    company = await MappingService.GetInfoForEntry(new Company() { PermId = request.id });
+                    if (company != null)
+                    {
+                        DbContext.Companies.Add(company); 
+                    }
+                }
+
+}
+            return new List<Company>() { company };
+
         }
-         
         #endregion
+
+        private bool CompanyExists(string id)
+        {
+            return DbContext.Companies.Any(e => e.OrganizationName == id);
+        }
+
     }
 }

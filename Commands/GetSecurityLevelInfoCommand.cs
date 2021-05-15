@@ -1,11 +1,12 @@
 ﻿using FinSearchDataAccessLibrary.Models.Database;
 using MediatR;
 using System;
+using System.Collections.Generic;
 
-namespace FInSearchAPI.Controllers.Commands
+namespace FInSearchAPI.Commands
 {
      
-    public class GetSecurityLevelInfoCommand : IRequest<Figi>
+    public class GetSecurityLevelInfoCommand : IRequest<IEnumerable<Figi>>
     { 
         public readonly string id;
 

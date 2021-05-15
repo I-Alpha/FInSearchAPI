@@ -1,5 +1,5 @@
-﻿using FInSearchAPI.Controllers.Commands; 
-using FluentValidation; 
+﻿using FInSearchAPI.Commands; 
+using FluentValidation;
 
 namespace FInSearchAPI.Validators
 {

@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 
 namespace FInSearchAPI.Interfaces
 {
-    public interface IService
+    public interface IService 
     {
 
         public string Type { get; set; }

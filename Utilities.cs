@@ -10,13 +10,23 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using Microsoft.VisualBasic.FileIO;
-using System.Reflection; 
+using System.Reflection;
+using System.Collections;
 
 namespace FinSearchDataAccessLibrary
 {
     public static class Utilities
     {
-        
+        public static string Serialize(this object metaToken)
+        {
+            if (metaToken == null)
+            {
+                return null;
+            }
+            return JsonConvert.SerializeObject(metaToken);
+
+        }
+
         public static IDictionary<string, string> ToKeyValue(this object metaToken)
         {
             if (metaToken == null)

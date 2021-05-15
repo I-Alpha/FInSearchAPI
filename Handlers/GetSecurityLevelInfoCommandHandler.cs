@@ -1,11 +1,10 @@
-﻿using FInSearchAPI.Controllers.Commands;
+﻿using FInSearchAPI.Commands;
 using FInSearchAPI.Models.Requests;
 using FInSearchAPI.Services;
 using FinSearchDataAccessLibrary.Models.Database;
 using FinSearchDataAcessLibrary.DataAccess;
 using FluentValidation;
 using MediatR;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -14,15 +13,15 @@ using System.Threading.Tasks;
 
 namespace FInSearchAPI.Handlers
 {
-    public class GetSecurityLevelInfoCommandHandler : IRequestHandler<GetSecurityLevelInfoCommand, Figi>
+    public class GetSecurityLevelInfoCommandHandler : IRequestHandler<GetSecurityLevelInfoCommand, IEnumerable<Figi>>
     {
         private readonly FinSearchDBContext DbContext;
         private readonly IValidator<GetSecurityLevelInfoCommand> Validator;
-        private readonly ILogger Logger;
+        private readonly ILogger<GetSecurityLevelInfoCommandHandler> Logger;
         private readonly MappingService MappingService;
         private readonly OpenFigiService OpenFigiService;
 
-        public GetSecurityLevelInfoCommandHandler(FinSearchDBContext dbContext, IValidator<GetSecurityLevelInfoCommand> validator, ILogger logger, MappingService mappingService, OpenFigiService openFigiService)
+        public GetSecurityLevelInfoCommandHandler(FinSearchDBContext dbContext, IValidator<GetSecurityLevelInfoCommand> validator, ILogger<GetSecurityLevelInfoCommandHandler> logger, MappingService mappingService, OpenFigiService openFigiService)
         {
             DbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
             Validator = validator ?? throw new ArgumentNullException(nameof(validator));
@@ -32,7 +31,7 @@ namespace FInSearchAPI.Handlers
         }
 
 
-        public async Task<Figi> Handle(GetSecurityLevelInfoCommand request, CancellationToken cancellationToken)
+        public async Task<IEnumerable<Figi>> Handle(GetSecurityLevelInfoCommand request, CancellationToken cancellationToken)
         {
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
@@ -52,7 +51,7 @@ namespace FInSearchAPI.Handlers
                 if (figiResponse != null)
                     figi = figiResponse.Data[0].Data[0];
             }
-            return figi;
+            return new List<Figi>() { figi };
         }
 
     }

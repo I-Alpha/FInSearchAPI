@@ -1,4 +1,5 @@
-﻿using FInSearchAPI.Handlers;
+﻿using FInSearchAPI.Commands;
+using FInSearchAPI.Handlers;
 using FluentValidation;
 using System;
 using System.Collections.Generic;
