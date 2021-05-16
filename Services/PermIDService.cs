@@ -31,7 +31,7 @@ namespace FInSearchAPI.Services
 
         public PermIDService(ApiHelper _ApiHelper)
         {
-            ApiClient = _ApiHelper.HttpClient;
+            ApiClient = _ApiHelper.HttpClient ?? throw new ArgumentNullException(nameof(_ApiHelper));
             ApiClient.DefaultRequestHeaders.Add("X-AG-Access-Token".ToLower(), "BXCqymrCagItruFZ1V8LppWLY9zXWWpV");
 
 

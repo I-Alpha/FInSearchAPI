@@ -40,8 +40,8 @@ namespace FInSearchAPI
             options.UseSqlServer(Configuration.GetConnectionString("FinDBContext")));
              
             services.AddScoped<ApiHelper>();
-            services.AddScoped<IService,PermIDService>();
-            services.AddScoped<IService,OpenFigiService>();
+            services.AddScoped<PermIDService>();
+            services.AddScoped<OpenFigiService>();
             services.AddScoped<MappingService>();
 /*
             services.AddScoped<IRequest<IEnumerable<Company>>, GetCompanyLevelInfoCommand>();
@@ -52,7 +52,7 @@ namespace FInSearchAPI
             services.AddScoped<IValidator<GetSecurityLevelInfoCommand>, OpenFigiIDValidator>();
 
 
-            services.AddScoped < IRequestHandler < GetCompanyLevelInfoCommand, IEnumerable < Company >>, GetCompanyLevelInfoCommandHandler > ();
+            services.AddScoped < IRequestHandler < GetCompanyLevelInfoCommand, IEnumerable < Company >> ,GetCompanyLevelInfoCommandHandler > ();
             services.AddScoped < IRequestHandler < PostCompanyLevelInfoCommand, IEnumerable < Company >> ,PostCompanyLevelInfoCommandHandler >();
             services.AddScoped < IRequestHandler < GetSecurityLevelInfoCommand, IEnumerable < Figi >> ,GetSecurityLevelInfoCommandHandler >();
 

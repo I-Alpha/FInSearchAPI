@@ -1,17 +1,12 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+using System.Linq; 
+using Microsoft.AspNetCore.Mvc; 
 using FinSearchDataAccessLibrary.Models.Database;
-using FinSearchDataAcessLibrary.DataAccess;
-using FInSearchAPI.Handlers;
+using FinSearchDataAcessLibrary.DataAccess; 
 using System.Threading;
 using Microsoft.Extensions.Logging;
-using System; 
-using FinSearchDataAccessLibrary;
-using System.Net.Mime;
-using Microsoft.AspNetCore.Http;
+using System;  
+using System.Net.Mime; 
 using MediatR;
 
 namespace FInSearchAPI.Commands

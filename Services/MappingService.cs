@@ -24,9 +24,9 @@ namespace FInSearchAPI.Services
 
         public MappingService(OpenFigiService _OpenFigiService, PermIDService _PermIDService , FinSearchDBContext _context)
         {
-            OpenFigiService = _OpenFigiService;
-            PermIDService = _PermIDService;
-            FinSearchDbContext = _context;
+            OpenFigiService = _OpenFigiService ?? throw new ArgumentNullException(nameof(_OpenFigiService));
+            PermIDService = _PermIDService ?? throw new ArgumentNullException(nameof(_PermIDService));
+            FinSearchDbContext = _context ?? throw new ArgumentNullException(nameof(_context));
         }
          
         public MappingService(FinSearchDBContext _context)

@@ -4,15 +4,11 @@ using FInSearchAPI.Models.Responses;
 using FinSearchDataAccessLibrary;
 using FinSearchDataAccessLibrary.Handlers;
 using FinSearchDataAccessLibrary.Interfaces; 
-using FinSearchDataAccessLibrary.Models.Database;
-using Newtonsoft.Json;
+using FinSearchDataAccessLibrary.Models.Database; 
 using RestSharp;
 using System;
-using System.Collections.Generic;
-using System.Net.Http;
-using System.Text;
-using System.Threading.Tasks;
-using static FInSearchAPI.Models.Request;
+using System.Collections.Generic; 
+using System.Threading.Tasks; 
 
 namespace FInSearchAPI.Services
 {
@@ -40,7 +36,7 @@ namespace FInSearchAPI.Services
         public string getParamString(string type) => v3ApiUrls[type];
         public OpenFigiService(ApiHelper _ApiHelper)
         {
-            apiClient = _ApiHelper.RestClient; 
+            apiClient = _ApiHelper.RestClient ?? throw new ArgumentNullException(nameof(_ApiHelper)); 
             apiClient.BaseUrl = new Uri(ApiBaseUrl); 
         }
 
