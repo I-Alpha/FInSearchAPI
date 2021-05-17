@@ -57,7 +57,7 @@ namespace FInSearchAPI.Services
         public async Task<string> LookUpByIdAsync(string ID)
         {        
 
-            var processedsearchString = LookUpAPIBaseUrl + ID + LookUpAPIUrlParameters;
+            var processedsearchString = LookUpAPIBaseUrl + transformID(ID) + LookUpAPIUrlParameters;
             HttpResponseMessage response = ApiClient.GetAsync(processedsearchString).Result;
 
             if (response.IsSuccessStatusCode)
@@ -111,6 +111,6 @@ namespace FInSearchAPI.Services
         {
             return Url.Split("-")[1];
         }
- 
+        public string transformID(string id) => "1-" + id;
     }
 }

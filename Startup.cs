@@ -17,6 +17,8 @@ using System.Collections.Generic;
 using FInSearchAPI.Handlers;
 using FinSearchDataAccessLibrary.Models.Database;
 using Microsoft.Extensions.Logging;
+using Autofac.Extensions.DependencyInjection;
+using System.Reflection;
 
 namespace FInSearchAPI
 {
@@ -35,6 +37,8 @@ namespace FInSearchAPI
             services.AddSingleton(new LoggerFactory());
             services.AddLogging();
             services.AddMvc();
+            services.AddAutofac();
+            services.AddMediatR(this.GetType().GetTypeInfo().Assembly);
 
             services.AddDbContext<FinSearchDBContext>(options =>
             options.UseSqlServer(Configuration.GetConnectionString("FinDBContext")));
@@ -43,33 +47,19 @@ namespace FInSearchAPI
             services.AddScoped<PermIDService>();
             services.AddScoped<OpenFigiService>();
             services.AddScoped<MappingService>();
-/*
-            services.AddScoped<IRequest<IEnumerable<Company>>, GetCompanyLevelInfoCommand>();
-            services.AddScoped<IRequest<IEnumerable<Figi>>, GetSecurityLevelInfoCommand>();*/
-
-
-            services.AddScoped<IValidator<GetCompanyLevelInfoCommand>, PermIDValidator>();
-            services.AddScoped<IValidator<GetSecurityLevelInfoCommand>, OpenFigiIDValidator>();
-
-
-            services.AddScoped < IRequestHandler < GetCompanyLevelInfoCommand, IEnumerable < Company >> ,GetCompanyLevelInfoCommandHandler > ();
-            services.AddScoped < IRequestHandler < PostCompanyLevelInfoCommand, IEnumerable < Company >> ,PostCompanyLevelInfoCommandHandler >();
-            services.AddScoped < IRequestHandler < GetSecurityLevelInfoCommand, IEnumerable < Figi >> ,GetSecurityLevelInfoCommandHandler >();
-
-
-
-
             /*
+                        services.AddScoped<IRequest<IEnumerable<Company>>, GetCompanyLevelInfoCommand>();
+                        services.AddScoped<IRequest<IEnumerable<Figi>>, GetSecurityLevelInfoCommand>();*/
 
-                        services.AddControllers().AddNewtonsoftJson(options => options.UseMemberCasing());*/
+            services.AddValidatorsFromAssemblyContaining(this.GetType());
 
             services.AddSwaggerGen(c =>
                {
                    c.SwaggerDoc("v1", new OpenApiInfo { Title = "FinSearch API", Version = "v1" });
 
                });
-
         }
+
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)

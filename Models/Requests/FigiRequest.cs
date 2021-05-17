@@ -1,10 +1,10 @@
 ﻿
 using FinSearchDataAccessLibrary.Models;
 using Newtonsoft.Json;
- 
+
 namespace FInSearchAPI.Models.Requests
 {
-    public class FigiRequest :Entity 
+    public class FigiRequest : Entity
     {
         public FigiRequest()
         {
@@ -73,4 +73,7 @@ namespace FInSearchAPI.Models.Requests
         public string Parameters { get; set; }
     }
 }
+
+
+
  

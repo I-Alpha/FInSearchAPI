@@ -19,10 +19,10 @@ namespace FInSearchAPI.Controllers
     {
         #region fields
         private readonly FinSearchDBContext Context;
-        private readonly IRequestHandler<GetSecurityLevelInfoCommand, IEnumerable<Figi>> GetSecurityLevelInfoCommandHandler;
+        private readonly IRequestHandler<GetSecurityLevelInfoCommand, IEnumerable<FigiInstrument>> GetSecurityLevelInfoCommandHandler;
         private readonly ILogger Logger;
 
-        public SecurityLevelController(ILogger _Logger, FinSearchDBContext _context, IRequestHandler<GetSecurityLevelInfoCommand, IEnumerable<Figi>> _GetSecurityLevelInfoCommandHandler)
+        public SecurityLevelController(ILogger _Logger, FinSearchDBContext _context, IRequestHandler<GetSecurityLevelInfoCommand, IEnumerable<FigiInstrument>> _GetSecurityLevelInfoCommandHandler)
         {
              
             Context = _context ?? throw new ArgumentNullException(nameof(_context)); ;
@@ -36,7 +36,7 @@ namespace FInSearchAPI.Controllers
         #region Methods        
         // GET: api/Figi s
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Figi>>>GetFigis()  
+        public async Task<ActionResult<IEnumerable<FigiInstrument>>>GetFigis()  
         {
             return await Context.Figi.ToListAsync();
         }

@@ -8,11 +8,11 @@ using Microsoft.Extensions.Logging;
 using System;  
 using System.Net.Mime; 
 using MediatR;
+using System.Threading.Tasks;
 
 namespace FInSearchAPI.Commands
 {
     [Route("FinSearch/[Controller]")]
-     
     [ApiController]
     [Produces(MediaTypeNames.Application.Json)]
     public class CompanyLevelController : ControllerBase
@@ -20,46 +20,48 @@ namespace FInSearchAPI.Commands
         #region fields
         private readonly FinSearchDBContext context;
         private readonly ILogger<CompanyLevelController> Logger;
-        private readonly IRequestHandler<GetCompanyLevelInfoCommand, IEnumerable<Company>> GetCompanyLevelInfoCommandHandler;
-        private readonly IRequestHandler<PostCompanyLevelInfoCommand, IEnumerable<Company>> PostCompanyLevelInfoCommandHandler;
+        private readonly IMediator _mediator;
         #endregion
 
         #region Contructor
 
-        public CompanyLevelController(ILogger<CompanyLevelController> _Logger, FinSearchDBContext _context, IRequestHandler<GetCompanyLevelInfoCommand, IEnumerable<Company>> _GetCompanyLevelInfoCommandHandler,  IRequestHandler<PostCompanyLevelInfoCommand, IEnumerable<Company>> _PostCompanyLevelInfoCommandHandler)
+        public CompanyLevelController(ILogger<CompanyLevelController> _Logger, FinSearchDBContext _context, IMediator mediator)
         {
             context = _context ?? throw new ArgumentNullException(nameof(_context)); ;
-            GetCompanyLevelInfoCommandHandler = _GetCompanyLevelInfoCommandHandler ?? throw new ArgumentNullException(nameof(_GetCompanyLevelInfoCommandHandler)); ;
             Logger = _Logger ?? throw new ArgumentNullException(nameof(_Logger));
-            PostCompanyLevelInfoCommandHandler = _PostCompanyLevelInfoCommandHandler ?? throw new ArgumentNullException(nameof(_GetCompanyLevelInfoCommandHandler)); ; ;
+            _mediator = mediator;
         }
         #endregion
 
         #region Methods 
-        // GET: api/Companies
-        [HttpGet]
+        // GET: api/CompanyLevel/All
+        [HttpGet("All")]
         public ActionResult<IEnumerable<Company>> GetCompanies()
         {
-            return  context.Companies.ToList();
+            var r = context.Companies.ToList();
+            if (r.Count() == 0)
+                return Ok("No records exist");
+            return Ok(r) ?? Ok("null error");
         }
 
-        // GET: api/Companies/5
-        [HttpGet("{id:length(12)}", Name ="GetCompanyInfo")] 
-        public ActionResult<List<Company>> GetCompanyInfoById([FromBody] GetCompanyLevelInfoCommand command, CancellationToken cancellationToken = default)
-        {
+        // GET: api/CompanyLevel/5000013918
+        [HttpGet]
+        [Route("id={id}")]
+        public async Task<ActionResult<IEnumerable<Company>>> GetCompanyLevelInfoById([FromRoute]GetCompanyLevelInfoCommand command, CancellationToken cancellationToken = default)
+        { 
             /*  if (command == null)
                   throw new ArgumentNullException(nameof(command));
-
-              var res =  GetCompanyLevelInfoCommandHandler.Handle(command, cancellationToken).Result;
+            */
+              var res =await _mediator.Send(command).ConfigureAwait(false); 
 
               if (res != null)
-                  return Ok(res.Serialize());*/
+                  return Ok(res); 
 
-            return new List<Company>();
+            return Ok("No such records exist");
         }
 
 
-        /*// POST: api/Companies
+        /*// POST: api/CompanyLevel
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
         public async Task<IActionResult> PostCompanyLevelInfo([FromBody] PostCompanyLevelInfoCommand command, CancellationToken cancellationToken = default)
@@ -77,7 +79,7 @@ namespace FInSearchAPI.Commands
             return Ok(1); 
              
         } */
-      
+
         #endregion
     }
 }

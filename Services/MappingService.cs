@@ -36,61 +36,64 @@ namespace FInSearchAPI.Services
 
         public async Task<Company> GetInfoForEntry(Company _company) {
 
-
             if (!_company.IsComplete())
             {
-                var entityjson=  PermIDService.LookUpByIdAsync(_company.PermId).Result;
-                _company  =  (Company)CreateObjectFromJson(entityjson)  ;
-                _company.PrimaryQuote = (Quote)await PermIDService.GetQuoteAsync(_company);
-                _company.OpenFigiEntry = GetFigiForCompanyAsync(_company).Result; 
-                _company.CompositeCode = await GetCompositCodeAsync(_company.PrimaryQuote.MIC);               
-            }
+                var entityjson = await PermIDService.LookUpByIdAsync(_company.PermId);
 
+                _company = (Company)CreateObjectFromJson(entityjson);
+
+                if (_company != null)
+                {
+                    await FinSearchDbContext.Companies.AddAsync(_company);
+                }
+                else return _company;
+                
+
+                //quotes
+                _company.PrimaryQuote = (Quote)await PermIDService.GetQuoteAsync(_company);
+
+                if (_company.PrimaryQuote != null)
+                    await FinSearchDbContext.Quotes.AddAsync(_company.PrimaryQuote);
+
+                //figi
+                _company.OpenFigiEntry = await GetFigiForCompanyAsync(_company);
+                if (_company.OpenFigiEntry != null)
+                    await FinSearchDbContext.Figi.AddAsync(_company.OpenFigiEntry);
+
+                _company.CompositeCode = await GetCompositCodeAsync(_company.PrimaryQuote.MIC);
+
+                await FinSearchDbContext.SaveChangesAsync();
+            }
             return _company; 
        
         } 
          
         public async Task<string> GetCompositCodeAsync(string _mic) {
              
-            using (FinSearchDbContext) 
-            {
+       
                 var qry = from LookUpRow in FinSearchDbContext.BloomBergLookUp
                           where LookUpRow.MIC == _mic
                           select   LookUpRow.CompositeCode ;
                 var q=  qry.FirstOrDefault();                    
                 return q;
-            } 
-        }
+            
+        } 
 
-        public async Task<Figi> GetFigiForCompanyAsync(Company _Company)
+        public async Task<FigiInstrument> GetFigiForCompanyAsync(Company _Company)
         {
             //Company to figi obj for post request
             var FigiRequestObj = new List<FigiRequest> { OpenFigiService.ConvertCompanyToFigiRequest(_Company).Result };
-            var list = new List<FigiRequest>()
-            {
-                new FigiRequest("TICKER", "MSFT").WithExchangeCode("US").WithMarketSectorDescription("Equity")
-            };
+ 
+            var datalist = await OpenFigiService.MapAsync(FigiRequestObj);
 
-            var response = await OpenFigiService.MapAsync(FigiRequestObj);
-
-            foreach (var dataInstrument in response.Data)
-                if (dataInstrument.Data != null && dataInstrument.Data.Any())
-                    foreach (var instrument in dataInstrument.Data)
-                        return instrument;
-
-
-        /*                if (response != null)
+            if (datalist != null)
             {
 
-                var result = (Figi)((Interfaces.IService)OpenFigiService).CreateObjectFromJson(response);
-
-          *//*      _Company.OpenFigiEntry = result;
-*//*
-                return result;*/
-             
+                return datalist[0];
+            }
 
             //
-            return new Figi();
+            return new FigiInstrument();
         }
           
       

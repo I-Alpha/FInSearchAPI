@@ -1,18 +1,20 @@
 ﻿using FinSearchDataAccessLibrary.Models.Database;
 using MediatR;
+using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
 
 namespace FInSearchAPI.Commands
 {
-     
-    public class GetSecurityLevelInfoCommand : IRequest<IEnumerable<Figi>>
+
+    [BindProperties(SupportsGet = true)]
+    public class GetSecurityLevelInfoCommand : IRequest<IEnumerable<FigiInstrument>>
     { 
         public readonly string id;
 
-        public GetSecurityLevelInfoCommand(string id)
+        public GetSecurityLevelInfoCommand(string Id)
         {
-            this.id = id ?? throw new ArgumentNullException(nameof(id));
+            this.id = Id ?? throw new ArgumentNullException(nameof(Id));
         }
 
 

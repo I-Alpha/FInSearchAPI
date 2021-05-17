@@ -2,17 +2,42 @@
 using FinSearchDataAccessLibrary.Models.Database;
 using Newtonsoft.Json;
 using RestSharp;
-using System.Collections.Generic; 
+using System.Collections.Generic;
 
 namespace FInSearchAPI.Models.Responses
 {
-        public class FigiArrayResponse 
+    public class FigiArrayResponse : RestResponse
     {
-            [JsonProperty("data")]
-            public List<Figi> Data { get; set; }
+        public FigiArrayResponse() 
+        {
+        }
 
-            [JsonProperty("error")]
-            public string Error { get; set; }
-        
+        [JsonProperty("error")]
+        public string Error { get; set; }
+
+        [JsonProperty("data")]
+        public List<FigiInstrument> Data { get; set; }
     }
+    public class FigiArrayResponse2 : RestResponse
+    {
+
+        [JsonProperty("error")]
+        public string Error { get; set; }
+
+        [JsonProperty("data")]
+        public List<Rootobject> Data { get; set; }
+    }
+
+}
+
+
+
+public class Rootobject
+{
+    public Arrayfigi[] data { get; set; }
+}
+
+public class Arrayfigi
+{
+    public FigiInstrument[] data { get; set; }
 }

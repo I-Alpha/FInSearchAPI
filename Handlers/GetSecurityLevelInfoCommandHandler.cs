@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 
 namespace FInSearchAPI.Handlers
 {
-    public class GetSecurityLevelInfoCommandHandler : IRequestHandler<GetSecurityLevelInfoCommand, IEnumerable<Figi>>
+    public class GetSecurityLevelInfoCommandHandler : IRequestHandler<GetSecurityLevelInfoCommand, IEnumerable<FigiInstrument>>
     {
         private readonly FinSearchDBContext DbContext;
         private readonly IValidator<GetSecurityLevelInfoCommand> Validator;
@@ -31,7 +31,7 @@ namespace FInSearchAPI.Handlers
         }
 
 
-        public async Task<IEnumerable<Figi>> Handle(GetSecurityLevelInfoCommand request, CancellationToken cancellationToken)
+        public async Task<IEnumerable<FigiInstrument>> Handle(GetSecurityLevelInfoCommand request, CancellationToken cancellationToken)
         {
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
@@ -47,11 +47,11 @@ namespace FInSearchAPI.Handlers
                         new FigiRequest() {IdValue = request.id
                     }};
 
-                var figiResponse = await OpenFigiService.MapAsync(temp);
-                if (figiResponse != null)
-                    figi = figiResponse.Data[0].Data[0];
+                var response = await OpenFigiService.MapAsync(temp);
+                if (response != null)
+                    figi = response[0];
             }
-            return new List<Figi>() { figi };
+            return new List<FigiInstrument>() { figi };
         }
 
     }

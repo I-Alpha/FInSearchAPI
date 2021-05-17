@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 
 namespace FInSearchAPI.Handlers
 {
-    public class PostCompanyLevelInfoCommandHandler : IRequestHandler<PostCompanyLevelInfoCommand, IEnumerable<Company>>
+    public class PostCompanyLevelInfoCommandHandler //: IRequestHandler<PostCompanyLevelInfoCommand, IEnumerable<Company>>
     {
         #region Fields        
         private readonly FinSearchDBContext DbContext;

@@ -4,50 +4,52 @@ using FInSearchAPI.Models.Responses;
 using FinSearchDataAccessLibrary;
 using FinSearchDataAccessLibrary.Handlers;
 using FinSearchDataAccessLibrary.Interfaces; 
-using FinSearchDataAccessLibrary.Models.Database; 
+using FinSearchDataAccessLibrary.Models.Database;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using RestSharp;
 using System;
-using System.Collections.Generic; 
-using System.Threading.Tasks; 
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace FInSearchAPI.Services
 {
-    public class OpenFigiService :  Service
-    { 
+    public class OpenFigiService : Service
+    {
 
         public int Id { set; get; }
-         
+
 
         private static new IEntityHandler EntityHandler = new EntityHandler();
 
         private const string ApiBaseUrl = "https://api.openfigi.com";
 
-        private  readonly RestClient apiClient;
+        private readonly RestClient apiClient;
 
-        private IJsonSerializer JsonSerializer = new NewtonsoftJsonSerializer(); 
+        private NewtonsoftJsonSerializer JsonSerializer = new NewtonsoftJsonSerializer();
 
         public Dictionary<string, string> v3ApiUrls = new Dictionary<string, string> {
                                                         { "map", "v3/mapping" },
                                                         { "mapbykey" , "v3/mapping/:key" },
                                                         { "search" , "v3/search"},
                                                         { "filter" , "v3/filter" }
-                                                    }; 
+                                                    };
 
         public string getParamString(string type) => v3ApiUrls[type];
         public OpenFigiService(ApiHelper _ApiHelper)
         {
-            apiClient = _ApiHelper.RestClient ?? throw new ArgumentNullException(nameof(_ApiHelper)); 
-            apiClient.BaseUrl = new Uri(ApiBaseUrl); 
+            apiClient = _ApiHelper.RestClient ?? throw new ArgumentNullException(nameof(_ApiHelper));
+            apiClient.BaseUrl = new Uri(ApiBaseUrl);
         }
 
-        public async Task<FigiRequest> ConvertCompanyToFigiRequest(Company _company) {
-            return new FigiRequest 
-            {
-                IdType = _company.PrimaryQuote.ExchangeCode,
-                IdValue = _company.PrimaryQuote.Ticker
-            } ;
+        public async Task<FigiRequest> ConvertCompanyToFigiRequest(Company _company)
+        {
+            return new FigiRequest("TICKER", _company.PrimaryQuote.Ticker);
         }
-     
+
+
+
         public async Task<string> SearchAsync(List<FigiRequest> ObjRequest)
         {
             /*
@@ -84,30 +86,26 @@ namespace FInSearchAPI.Services
             return "";
         }
 
-        public async Task<IRestResponse<List<FigiArrayResponse>>> MapAsync(List<FigiRequest> ObjRequest)
+        public async Task<IList<FigiInstrument>> MapAsync(IList<FigiRequest> ObjRequest)
         {
             apiClient.BaseUrl = new Uri("https://api.openfigi.com/v3/mapping");
-            var request = new RestRequest(Method.POST);
-             
-            request.AddHeader("Content-Type", "text/json");
-            request.AddJsonBody(ObjRequest);
+            var request = new RestRequest(Method.POST) { RequestFormat = DataFormat.Json};  
+            request.AddHeader("Content-Type", "application/json");
             request.JsonSerializer = JsonSerializer;
-            var response = apiClient.Post<List<FigiArrayResponse>>(request);          
+            request.AddJsonBody(ObjRequest);
+            var response =  apiClient.Execute<List<FigiArrayResponse>>(request); 
+            var res =   new List<FigiInstrument>();
 
-            if (response.IsSuccessful)
-            {
-                // Parse the response body.
-                return response; 
+            if (response.IsSuccessful) {
+                foreach (FigiArrayResponse item in response.Data)
+                {
+                    if (item!= null && item.Data.Any())
+                         return item.Data; 
+                }             
             }
-            else
-            {
-                Console.WriteLine("{0} ({1})", (int)response.StatusCode, response.StatusDescription);
-                return new RestResponse<List<FigiArrayResponse>>();
-
-            }
-
+            return res;
+ 
         }
 
     }
-
 }

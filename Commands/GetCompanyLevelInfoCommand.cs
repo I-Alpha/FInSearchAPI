@@ -1,17 +1,18 @@
 ﻿using FinSearchDataAccessLibrary.Models.Database;
-using MediatR; 
+using MediatR;
+using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
 
 namespace FInSearchAPI.Commands
 {
+    [BindProperties(SupportsGet = true)]
     public class GetCompanyLevelInfoCommand : IRequest<IEnumerable<Company>>
     { 
-        public readonly string id;
-
-        public GetCompanyLevelInfoCommand(string _id)
+        public string id { get; set; }
+        public GetCompanyLevelInfoCommand()
         {
-            this.id = _id ?? throw new ArgumentNullException(nameof(_id));
+         
         }
          
     }

@@ -48,29 +48,32 @@ namespace FInSearchAPI.Handlers
             if (res.IsValid)
             //perform logic 
             { 
+
                 //checked if company exists
                 if (CompanyExists(request.id))
                 {
                     results = DbContext.Companies.Where(x=> x.PermId == request.id).ToList();
+                    
                 }
-                if (results == null)
+                if (results.Count == 0)
                 {
-                    company = await MappingService.GetInfoForEntry(new Company() { PermId = request.id });
-                    if (company != null)
+                    company.PermId = request.id;
+                    company = await MappingService.GetInfoForEntry(company).ConfigureAwait(false);
+
+                   if (company != null)
                     {
-                        DbContext.Companies.Add(company); 
+                        results.Add(company);                      
                     }
                 }
+            }
 
-}
-            return new List<Company>() { company };
+            return results; 
 
         }
-        #endregion
-
-        private bool CompanyExists(string id)
+        #endregion 
+            private bool CompanyExists(string id)
         {
-            return DbContext.Companies.Any(e => e.OrganizationName == id);
+            return DbContext.Companies.Any(e => e.PermId == id);
         }
 
     }
