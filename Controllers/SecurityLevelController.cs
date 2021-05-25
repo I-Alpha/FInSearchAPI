@@ -20,9 +20,9 @@ namespace FInSearchAPI.Controllers
         #region fields
         private readonly FinSearchDBContext Context;
         private readonly IRequestHandler<GetSecurityLevelInfoCommand, IEnumerable<FigiInstrument>> GetSecurityLevelInfoCommandHandler;
-        private readonly ILogger Logger;
+        private readonly ILogger<SecurityLevelController> Logger;
 
-        public SecurityLevelController(ILogger _Logger, FinSearchDBContext _context, IRequestHandler<GetSecurityLevelInfoCommand, IEnumerable<FigiInstrument>> _GetSecurityLevelInfoCommandHandler)
+        public SecurityLevelController(ILogger<SecurityLevelController> _Logger, FinSearchDBContext _context, IRequestHandler<GetSecurityLevelInfoCommand, IEnumerable<FigiInstrument>> _GetSecurityLevelInfoCommandHandler)
         {
              
             Context = _context ?? throw new ArgumentNullException(nameof(_context)); ;
@@ -42,8 +42,9 @@ namespace FInSearchAPI.Controllers
         }
 
         // GET: api/Figi s/5
-        [HttpGet("{id}")]
-        public async Task<IActionResult> GetSecurityLevelInfo([FromBody] GetSecurityLevelInfoCommand command, CancellationToken cancellationToken = default)
+        [HttpGet]
+        [Route("Ticker={Ticker}")]
+        public async Task<ActionResult<IEnumerable<FigiInstrument>>> GetSecurityLevelInfo([FromRoute] GetSecurityLevelInfoCommand command, CancellationToken cancellationToken = default)
         { 
 
             if (command  == null)
@@ -54,7 +55,7 @@ namespace FInSearchAPI.Controllers
             if (res != null)
                 return Ok(res);
 
-            return Ok(1);
+            return Ok("No records found");
         }
         #endregion 
     }

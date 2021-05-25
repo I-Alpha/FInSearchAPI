@@ -1,14 +1,13 @@
 ﻿using System.Collections.Generic;
 using System.Linq; 
 using Microsoft.AspNetCore.Mvc; 
-using FinSearchDataAccessLibrary.Models.Database;
 using FinSearchDataAcessLibrary.DataAccess; 
 using System.Threading;
 using Microsoft.Extensions.Logging;
 using System;  
 using System.Net.Mime; 
 using MediatR;
-using System.Threading.Tasks;
+using FInSearchAPI.Models.Responses;
 
 namespace FInSearchAPI.Commands
 {
@@ -36,27 +35,30 @@ namespace FInSearchAPI.Commands
         #region Methods 
         // GET: api/CompanyLevel/All
         [HttpGet("All")]
-        public ActionResult<IEnumerable<Company>> GetCompanies()
-        {
-            var r = context.Companies.ToList();
-            if (r.Count() == 0)
-                return Ok("No records exist");
-            return Ok(r) ?? Ok("null error");
+        public ActionResult<IEnumerable<CompanyLevelInfo>> GetCompanies()
+        { 
+                var res =  context.Companies.ToList()?? default;
+                if (res.Count() == 0)
+                    return Ok("No records exist");
+                var convertedRes = res.Select(x => new CompanyLevelInfo(x));
+            return Ok(res) ?? Ok("null error");
         }
 
         // GET: api/CompanyLevel/5000013918
         [HttpGet]
         [Route("id={id}")]
-        public async Task<ActionResult<IEnumerable<Company>>> GetCompanyLevelInfoById([FromRoute]GetCompanyLevelInfoCommand command, CancellationToken cancellationToken = default)
+        public ActionResult<IEnumerable<CompanyLevelInfo>> GetCompanyLevelInfoById([FromRoute]GetCompanyLevelInfoCommand command, CancellationToken cancellationToken = default)
         { 
             /*  if (command == null)
                   throw new ArgumentNullException(nameof(command));
             */
-              var res =await _mediator.Send(command).ConfigureAwait(false); 
+              var res = _mediator.Send(command).Result;
 
-              if (res != null)
-                  return Ok(res); 
-
+            if (res != null)
+            {
+                return Ok(res);
+            }
+           Logger.LogWarning( "{res} from not found",res);
             return Ok("No such records exist");
         }
 

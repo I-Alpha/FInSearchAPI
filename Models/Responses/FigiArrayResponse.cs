@@ -17,27 +17,5 @@ namespace FInSearchAPI.Models.Responses
 
         [JsonProperty("data")]
         public List<FigiInstrument> Data { get; set; }
-    }
-    public class FigiArrayResponse2 : RestResponse
-    {
-
-        [JsonProperty("error")]
-        public string Error { get; set; }
-
-        [JsonProperty("data")]
-        public List<Rootobject> Data { get; set; }
-    }
-
-}
-
-
-
-public class Rootobject
-{
-    public Arrayfigi[] data { get; set; }
-}
-
-public class Arrayfigi
-{
-    public FigiInstrument[] data { get; set; }
+    } 
 }

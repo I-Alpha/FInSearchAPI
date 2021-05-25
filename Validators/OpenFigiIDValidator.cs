@@ -7,10 +7,10 @@ namespace FInSearchAPI.Validators
     {
         #region Constructors
         public OpenFigiIDValidator()
-        {
-            RuleFor(x => x.id)
+        { 
+            RuleFor(x => x.Ticker)
                 .NotEmpty().WithMessage("Command cannot be null.")
-                .Length(10).WithMessage("Input must be 10 digit permID. ");             
+                .Length(2,7).WithMessage("Input must be company ticker. ");             
         }
         #endregion 
     }  

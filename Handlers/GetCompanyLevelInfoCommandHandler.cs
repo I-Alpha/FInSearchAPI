@@ -1,10 +1,12 @@
 ﻿using FInSearchAPI.Commands;
 using FInSearchAPI.Interfaces;
+using FInSearchAPI.Models.Responses;
 using FInSearchAPI.Services;
 using FinSearchDataAccessLibrary.Models.Database;
 using FinSearchDataAcessLibrary.DataAccess;
 using FluentValidation;
 using MediatR;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -14,7 +16,7 @@ using System.Threading.Tasks;
 
 namespace FInSearchAPI.Handlers
 {
-    public class GetCompanyLevelInfoCommandHandler : IRequestHandler<GetCompanyLevelInfoCommand, IEnumerable<Company>>
+    public class GetCompanyLevelInfoCommandHandler : IRequestHandler<GetCompanyLevelInfoCommand, IEnumerable<CompanyLevelInfo>>
     {
         #region Fields        
         private readonly FinSearchDBContext DbContext;
@@ -34,7 +36,7 @@ namespace FInSearchAPI.Handlers
         #endregion
 
         #region Methods 
-        public async Task<IEnumerable<Company>> Handle(GetCompanyLevelInfoCommand request, CancellationToken cancellationToken)
+        public async Task<IEnumerable<CompanyLevelInfo>> Handle(GetCompanyLevelInfoCommand request, CancellationToken cancellationToken)
         {
 
             if (request == null)
@@ -44,6 +46,7 @@ namespace FInSearchAPI.Handlers
             var res =   Validator.Validate(request);
             var company = new Company();
             var results = new List<Company>();
+            var convertedresults = new List<CompanyLevelInfo>();
 
             if (res.IsValid)
             //perform logic 
@@ -52,29 +55,37 @@ namespace FInSearchAPI.Handlers
                 //checked if company exists
                 if (CompanyExists(request.id))
                 {
-                    results = DbContext.Companies.Where(x=> x.PermId == request.id).ToList();
-                    
+                    results = DbContext.Companies.Where(x=> x.PermId == request.id).ToList(); 
+
+
                 }
+                //check external apis
                 if (results.Count == 0)
                 {
+                    Logger.LogWarning("No results found", results);
                     company.PermId = request.id;
-                    company = await MappingService.GetInfoForEntry(company).ConfigureAwait(false);
+                    var companyOut = await MappingService.PopulateInfoForCompany(company);
 
-                   if (company != null)
+                   if (companyOut != null)
                     {
-                        results.Add(company);                      
+                        await DbContext.Companies.AddAsync(companyOut);
+                        await DbContext.SaveChangesAsync();
+                        results.Add(DbContext.Companies.Where(x => x.PermId == request.id).FirstOrDefault());
                     }
                 }
             }
-
-            return results; 
+            convertedresults = results.Select(x => new CompanyLevelInfo(x)).ToList();
+            return convertedresults; 
 
         }
-        #endregion 
-            private bool CompanyExists(string id)
+
+         
+        private bool CompanyExists(string id)
         {
-            return DbContext.Companies.Any(e => e.PermId == id);
+           return DbContext.Companies.Any(e => e.PermId == id);
         }
+
+        #endregion 
 
     }
 }

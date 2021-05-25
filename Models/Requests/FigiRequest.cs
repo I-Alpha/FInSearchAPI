@@ -18,6 +18,13 @@ namespace FInSearchAPI.Models.Requests
             this.IdValue = idValue;
         }
 
+        public FigiRequest(string idValue)
+          : this()
+        {
+            this.IdType = "TICKER";
+            this.IdValue = idValue;
+        }
+
         public FigiRequest WithExchangeCode(string exchCode)
         {
             this.ExchangeCode = exchCode;
@@ -43,7 +50,7 @@ namespace FInSearchAPI.Models.Requests
         }
 
         [JsonProperty("idType")]
-        public string IdType { get; set; }
+        public string IdType { get; set; } 
 
         [JsonProperty("idValue")]
         public string IdValue { get; set; }

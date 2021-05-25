@@ -1,110 +1,180 @@
 ﻿using System;
 using System.Net.Http;
-using System.Threading.Tasks; 
-using System.Net.Http.Headers;
-using FinSearchDataAccessLibrary.Interfaces;
-using FinSearchDataAccessLibrary.Models;
-using FinSearchDataAccessLibrary.Models.Database;
-using FinSearchDataAccessLibrary.Handlers;
-using FInSearchAPI.Models;
+using System.Threading.Tasks;  
+using FinSearchDataAccessLibrary.Interfaces; 
+using FinSearchDataAccessLibrary.Models.Database; 
+using FInSearchAPI.Models; 
+using Microsoft.Extensions.Logging;
+using System.Collections.Generic;
 using RestSharp;
+using FinSearchDataAccessLibrary;
+using Newtonsoft.Json;
+using FinSearchDataAPI;
 
 namespace FInSearchAPI.Services
 {
 
-    public class PermIDService : Service  
+    public class PermIDService : Service
     {
-        public int Id { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
 
-        private readonly HttpClient ApiClient;
+        #region Fields
+        private readonly HttpClient HttpClient;
+        private readonly RestClient RestClient;
 
-        private static new IEntityHandler EntityHandler = new EntityHandler();
+        private NewtonsoftJsonSerializer JsonSerializer = new NewtonsoftJsonSerializer();
+
 
         public const string LookUpAPIBaseUrl = "https://permid.org/";
-        public const string SearchAPIBaseUrl = "https://api-eit.refinitiv.com/permid/";
+        public const string SearchAPIBaseUrl = "https://api-eit.refinitiv.com/permid/search";
+
+        public const string MatchAPIBaseUrl = SearchAPIBaseUrl + "match";
 
         private const string APIToken = "access-token=BXCqymrCagItruFZ1V8LppWLY9zXWWpV";
         private const string ResponseFormat = "?format=json-ld";
         private string LookUpAPIUrlParameters { get { return ResponseFormat + "&" + APIToken; } }
-        private string SearchAPIUrlParameters { get { return SearchAPIBaseUrl + "search?" + "format=json" + "&" + APIToken; } }
-      
+        private string SearchAPIUrlParameters { get { return "search?"+APIToken+"&"; }   }
 
-        public PermIDService(ApiHelper _ApiHelper)
+        public override ILogger Logger { get  ; set ; }
+
+        #endregion
+        #region Contructors
+        public PermIDService(ApiHelper _ApiHelper ,ILogger<PermIDService> _Logger)
         {
-            ApiClient = _ApiHelper.HttpClient ?? throw new ArgumentNullException(nameof(_ApiHelper));
-            ApiClient.DefaultRequestHeaders.Add("X-AG-Access-Token".ToLower(), "BXCqymrCagItruFZ1V8LppWLY9zXWWpV");
+            Logger = _Logger ?? throw new ArgumentNullException(nameof(_Logger)); ; 
+            HttpClient = _ApiHelper.HttpClient ?? throw new ArgumentNullException(nameof(_ApiHelper));
+            RestClient = _ApiHelper.RestClient ?? throw new ArgumentNullException(nameof(_ApiHelper));
 
-
+          /*  HttpClient.BaseAddress = new Uri("");
+            RestClient.BaseUrl = new Uri("");*/
+            RestClient.AddDefaultHeader("X-AG-Access-Token".ToLower(), "BXCqymrCagItruFZ1V8LppWLY9zXWWpV");
+            HttpClient.DefaultRequestHeaders.Add("X-AG-Access-Token".ToLower(), "BXCqymrCagItruFZ1V8LppWLY9zXWWpV");
         }
 
-        public async Task<string> SearchAsync(string searchString)
+        public override async Task<string> SearchAsync(string queryString) {
+            throw new NotImplementedException();
+        }
+
+        #endregion
+        #region Methods
+        public  async Task<string>  SearchAsync(string queryString, Dictionary<string,string> otherArgs)
         {
-            var processedsearchString = SearchAPIUrlParameters + "&q=" + searchString.ToLower();
-            HttpResponseMessage response = ApiClient.GetAsync(processedsearchString).Result;
-            if (response.IsSuccessStatusCode)
+            Logger.LogInformation("Starting Search Async");
+            RestClient.BaseUrl = new Uri(SearchAPIBaseUrl);
+            var request = new RestRequest(Method.GET)
             {
-                // Parse the response body.
-                return await response.Content.ReadAsStringAsync();
-                 
-           
+                JsonSerializer = JsonSerializer,
+                RequestFormat = DataFormat.Json
+
+            }; 
+            request.AddParameter("q", queryString, ParameterType.QueryString);
+
+            foreach (var (i, v) in otherArgs)
+                request.AddParameter(i, v, ParameterType.QueryString);
+
+            var response = RestClient.Execute(request);
+
+            if (response.IsSuccessful)
+            {// Parse the response body.
+
+                Logger.LogInformation("Response success : {0}", response);
+                return response.Content;
             }
             else
             {
-                Console.WriteLine("{0} ({1})", (int)response.StatusCode, response.ReasonPhrase);
+
+                Logger.LogInformation("Response fail : {0} , code : ", response,response.StatusCode); 
+                return "fail ";
+            }
+
+        }
+
+
+        public override async Task<string> MatchAsync(Company company)
+        {
+            RestClient.BaseUrl= new Uri(MatchAPIBaseUrl);
+            Logger.LogInformation("Starting MatchAsync");
+            var processedsearchString = MatchAPIBaseUrl;
+
+
+            var requestbody = new Dictionary<string, string> {
+                { "companyName" , company.OrganizationName },
+                { "companyPermID" , company.PermId }
+            } ;
+
+            var req = "CompanyName,CompanyPermID%0A" + company.OrganizationName + "," + company.PermId;
+                  var request = new RestRequest(Method.POST)
+            {
+                JsonSerializer = JsonSerializer,
+                RequestFormat = DataFormat.None
+                
+            };
+
+
+            request.AddHeader("Content-Type", "text/plain");
+            request.AddHeader("x-openmatch-dataType", "Person");
+            request.AddHeader("x-openmatch-numberOfMatchesPerRecord", "100");
+            /* request.AddParameter("text/plain",req, ParameterType.RequestBody);*/
+            request.AddJsonBody(requestbody);
+
+             var response = RestClient.Execute(request);
+
+            if (response.IsSuccessful)
+            {// Parse the response body.
+
+                Logger.LogInformation("Response success : {0}", response);
+                return response.Content;
+            }
+            else
+            {
+
+                Logger.LogInformation("Response fail : {0} , code : ", response, response.StatusCode);
                 return "fail ";
             }
         }
-        public async Task<string> LookUpByIdAsync(string ID)
-        {        
 
-            var processedsearchString = LookUpAPIBaseUrl + transformID(ID) + LookUpAPIUrlParameters;
-            HttpResponseMessage response = ApiClient.GetAsync(processedsearchString).Result;
+        public override async Task<string>  GetEntryAsync(string id)
+        {   //id = 10 digit permID
+
+            Logger.LogInformation("Starting GetEntryAsync");
+            var FullLookUpByIdSUrl = LookUpAPIBaseUrl + transformID(id) + LookUpAPIUrlParameters;
+
+            var response = await HttpClient.GetAsync(FullLookUpByIdSUrl);
 
             if (response.IsSuccessStatusCode)
             {
+                Logger.LogInformation("Response success : {0}", response);
                 return await response.Content.ReadAsStringAsync();
             }
             else
             {
-                Console.WriteLine("{0} ({1})", (int)response.StatusCode, response.ReasonPhrase);
+                Logger.LogInformation("Response fail : {0} , code : ", response, response.StatusCode);
                 return "fail";
             }
         }
 
- /*       public async Task<IEntity> CreateEntityAsync(string json)
-        { // Parse the response body.
-            ;
-            var JOentity = JObject.Parse(json);
-            var JOEntitytype = JOentity["@type"].ToString();
-            var EntityType =  EntityHandler.GetEntityType(JOEntitytype);
-
-            JsonLdSerializer JsonLdSerializer = new JsonLdSerializer();
-            JsonReader jsonReader = JOentity.CreateReader();
-
-            dynamic thisEntity = JsonLdSerializer.Deserialize(jsonReader, EntityType);
-            return thisEntity;
-        }*/
-  
-        public async Task<IEntity> fillQuoteAsync(dynamic thisEntity)
+        private async Task<IEntity> fillQuoteAsync(dynamic thisEntity)
         {
-            if (thisEntity.GetType() == typeof(Company))
-            {
-                if (thisEntity.PrimaryQuote != null)
+            Logger.LogInformation("Starting GetEntryAsync");
+        
+                if (thisEntity.GetType() == typeof(Company))
                 {
-                    thisEntity.Quote = await GetQuoteAsync(thisEntity);
+                    if (thisEntity.PrimaryQuote != null)
+                    {
+                        thisEntity.Quote = await GetPrimaryQuoteAsync(thisEntity);
+                    }
                 }
-            } 
+           
+
+            
             return thisEntity;
         }
-
-
-        public async Task<IEntity> GetQuoteAsync(dynamic thisEntity)
+        public async Task<IEntity> GetPrimaryQuoteAsync(dynamic thisEntity)
         {
-                var quoteUrl = thisEntity.QuoteURL;
-
-                string quotePermId = ExtractPermIDFromUrl(quoteUrl);
-                var json = await LookUpByIdAsync(quotePermId);
-                return  CreateObjectFromJson(json);                            
+            Logger.LogInformation("Starting GetPrimaryQuoteAsync with : {0}" , (object)thisEntity);
+            var quoteUrl = thisEntity.QuoteURL;
+            string quotePermId = ExtractPermIDFromUrl(quoteUrl);
+            var json = await GetEntryAsync(quotePermId);
+            return CreateObjectFromJson(json);
         }
 
         private string ExtractPermIDFromUrl(string Url)
@@ -112,5 +182,28 @@ namespace FInSearchAPI.Services
             return Url.Split("-")[1];
         }
         public string transformID(string id) => "1-" + id;
+
+        public async Task<List<string>> GetEmployeesForCompanyAsync(Company company)
+        {
+            /* Uses the vcard: family - name property of the person to find people with “Trump” last name. Then,
+                 the tr-person:holdsPosition and tr - person:isPositionIn properties of that person are used to find
+                 the organization in which that person has positions.The query is: */
+
+            Logger.LogInformation("Starting GetEmployeesForOrganizationAsync");
+
+            var res = "";
+
+            var searchstring= company.PermId;
+            var otherArgs = new Dictionary<string, string>() { { "entitytype", "Person" } };
+
+
+            if (company != null)
+                {  
+                    res = await SearchAsync(searchstring, otherArgs);
+                   
+                }
+            return new List<string>() { res};
+        }  
+        #endregion
     }
 }

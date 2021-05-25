@@ -1,4 +1,5 @@
-﻿using RestSharp;
+﻿using FInSearchAPI.Interfaces;
+using RestSharp;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,18 +9,11 @@ using System.Threading.Tasks;
 
 namespace FInSearchAPI.Models
 {
-    public   class ApiHelper
+    public   class ApiHelper  : IApiHelper
     {
-
-        public readonly RestClient RestClient ;
-        public readonly HttpClient HttpClient ;
-
-        public ApiHelper() {
-   
-            HttpClient = new HttpClient();
-            RestClient = new RestClient();
-            initializeClients();                 
-        }
+        #region Fields
+        private readonly RestClient restClient;
+        private readonly HttpClient httpClient;
 
         private readonly Dictionary<string,string> headers = new Dictionary<string, string>(){
                           {"json","appication/json" }
@@ -29,17 +23,35 @@ namespace FInSearchAPI.Models
                         , {"form-data","multipart/form-data" }
         };
 
+        public RestClient RestClient => restClient;
+
+        public HttpClient HttpClient => httpClient;
+
+
+        #endregion
+        #region Constructors
+        public ApiHelper() {
+   
+            httpClient = new HttpClient();
+            restClient = new RestClient();
+            initializeClients();                 
+        }
+
+        #endregion
+        #region Methods 
         private void initializeClients(){
 
             //RestClient
-            RestClient.AddDefaultHeaders(headers);
+            restClient.AddDefaultHeaders(headers);
 
             //httpClient
-            foreach (var item in headers) 
-              HttpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue(item.Value));
+            foreach (var item in headers)
+                httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue(item.Value));
 
   
         }
-    
-}
+
+        #endregion
+       
+    }
 }

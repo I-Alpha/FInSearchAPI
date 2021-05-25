@@ -1,12 +1,11 @@
 ﻿using FInSearchAPI.Models;
 using FInSearchAPI.Models.Requests; 
 using FInSearchAPI.Models.Responses;
-using FinSearchDataAccessLibrary;
-using FinSearchDataAccessLibrary.Handlers;
-using FinSearchDataAccessLibrary.Interfaces; 
+using FinSearchDataAccessLibrary; 
 using FinSearchDataAccessLibrary.Models.Database;
+using FinSearchDataAPI;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using RestSharp;
 using System;
 using System.Collections.Generic;
@@ -15,97 +14,81 @@ using System.Threading.Tasks;
 
 namespace FInSearchAPI.Services
 {
-    public class OpenFigiService : Service
+    public class OpenFigiService :  Service
     {
 
+        #region Fields
         public int Id { set; get; }
-
-
-        private static new IEntityHandler EntityHandler = new EntityHandler();
+        public override ILogger Logger { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
 
         private const string ApiBaseUrl = "https://api.openfigi.com";
 
-        private readonly RestClient apiClient;
+        private readonly RestClient ApiClient;
 
         private NewtonsoftJsonSerializer JsonSerializer = new NewtonsoftJsonSerializer();
 
-        public Dictionary<string, string> v3ApiUrls = new Dictionary<string, string> {
+        public Dictionary<string, string> V3_ApiUrls = new Dictionary<string, string> {
                                                         { "map", "v3/mapping" },
                                                         { "mapbykey" , "v3/mapping/:key" },
                                                         { "search" , "v3/search"},
                                                         { "filter" , "v3/filter" }
                                                     };
 
-        public string getParamString(string type) => v3ApiUrls[type];
+        #endregion
+        #region Constructors
         public OpenFigiService(ApiHelper _ApiHelper)
         {
-            apiClient = _ApiHelper.RestClient ?? throw new ArgumentNullException(nameof(_ApiHelper));
-            apiClient.BaseUrl = new Uri(ApiBaseUrl);
+            ApiClient = _ApiHelper.RestClient ?? throw new ArgumentNullException(nameof(_ApiHelper));
+            ApiClient.BaseUrl = new Uri(ApiBaseUrl);
         }
-
-        public async Task<FigiRequest> ConvertCompanyToFigiRequest(Company _company)
+        #endregion
+        #region Methods
+        public FigiRequest ConvertCompanyToFigiRequest(Company _company)
         {
             return new FigiRequest("TICKER", _company.PrimaryQuote.Ticker);
         }
-
-
-
-        public async Task<string> SearchAsync(List<FigiRequest> ObjRequest)
+        public override async Task<string> SearchAsync(string ObjRequest)
         {
-            /*
-*//*               var keyValueContent =  Utilities.ToKeyValue(ObjRequest);*//*
-   //  var jsonfigi = ObjRequest.ToKeyValue();
-   var settings = new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore };
-   var json2 = JsonConvert.SerializeObject(ObjRequest, settings);
+            ApiClient.BaseUrl = new Uri("https://api.openfigi.com/v3/mapping");
 
-   var content = new StringContent(json2, Encoding.UTF8, "application/json"); 
+            var res = new List<FigiInstrument>();
 
-  // var formUrlEncodedContent = new FormUrlEncodedContent(json2.ToKeyValue());
-//   formUrlEncodedContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
+            var request = new RestRequest(Method.POST)
+            {
+                JsonSerializer = JsonSerializer,
+                RequestFormat = DataFormat.Json
+            };
 
-   HttpResponseMessage response = apiClient.PostAsync(getParamString("search"), content).Result;
+            request.AddHeader("Content-Type", "text/json");
+            var obj = JsonConvert.DeserializeObject<FigiRequest[]>(ObjRequest);
+            request.AddJsonBody(obj);
 
-  // HttpResponseMessage response2 = apiClient.PostAsync(getParamString("search"), formUrlEncodedContent).Result;
-
-   if (response.IsSuccessStatusCode)
-   {
-       // Parse the response body.
-       var json = await response.Content.ReadAsStringAsync();
-    //   var json3 = await response2.Content.ReadAsStringAsync();
-       return json;
-
-   }
-   else
-   {
-       Console.WriteLine("{0} ({1})", (int)response.StatusCode, response.ReasonPhrase);
-       return "fail ";
-
-   }
-*/
-
-            return "";
-        }
-
-        public async Task<IList<FigiInstrument>> MapAsync(IList<FigiRequest> ObjRequest)
-        {
-            apiClient.BaseUrl = new Uri("https://api.openfigi.com/v3/mapping");
-            var request = new RestRequest(Method.POST) { RequestFormat = DataFormat.Json};  
-            request.AddHeader("Content-Type", "application/json");
-            request.JsonSerializer = JsonSerializer;
-            request.AddJsonBody(ObjRequest);
-            var response =  apiClient.Execute<List<FigiArrayResponse>>(request); 
-            var res =   new List<FigiInstrument>();
-
-            if (response.IsSuccessful) {
+            var response = ApiClient.Execute<IList<FigiArrayResponse>>(request);
+            if (response.IsSuccessful)
+            {
                 foreach (FigiArrayResponse item in response.Data)
                 {
-                    if (item!= null && item.Data.Any())
-                         return item.Data; 
-                }             
+                    if (item != null && item.Data.Any())
+                        return item.Data.Serialize();
+                }
             }
-            return res;
+            return res.Serialize();
+        }
+        public  async Task<string> SearchAsync(string ObjRequest, Dictionary<string,string> otherArgs)
+        {
+            throw new NotImplementedException();
  
         }
 
+        public override async Task<string> GetEntryAsync(string id)
+        {
+            throw new NotImplementedException(); 
+        }
+
+        public override Task<string> MatchAsync(Company company)
+        {
+            throw new NotImplementedException();
+        }
+        #endregion
     }
 }

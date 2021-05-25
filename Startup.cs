@@ -34,15 +34,29 @@ namespace FInSearchAPI
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+
+
+            var server = Configuration["DBServer"] ?? "ms-sql-server";
+            var port = Configuration["DBPort"] ?? "1433";
+            var user = Configuration["DBUser"] ?? "SA";// use actual user logic for publishing
+            var password = Configuration["DBPassword"] ?? "Pa55w0rd2021"; // erase for publishing
+            var database = Configuration["Database"] ?? "FinSearchDb"; // erase for publishing
+
+
+
+            services.AddDbContext<FinSearchDBContext>(options => 
+                options.UseSqlServer($"Server={server},{port};Initial Catalog={database};User ID ={user};Password={password}"));  
+
+
             services.AddSingleton(new LoggerFactory());
             services.AddLogging();
             services.AddMvc();
             services.AddAutofac();
             services.AddMediatR(this.GetType().GetTypeInfo().Assembly);
-
-            services.AddDbContext<FinSearchDBContext>(options =>
-            options.UseSqlServer(Configuration.GetConnectionString("FinDBContext")));
-             
+            /*
+                        services.AddDbContext<FinSearchDBContext>(options =>
+                        options.UseSqlServer(Configuration.GetConnectionString("FinDBContext")));*/
+  
             services.AddScoped<ApiHelper>();
             services.AddScoped<PermIDService>();
             services.AddScoped<OpenFigiService>();
@@ -64,21 +78,21 @@ namespace FInSearchAPI
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
-            if (env.IsDevelopment())
-            {
+            PrepDb.PreparePopulation(app); 
+
                 app.UseDeveloperExceptionPage();
                 app.UseSwagger();
                 app.UseSwaggerUI(c =>
                 {
                     c.SwaggerEndpoint("/swagger/v1/swagger.json", "FinSearch API v1");
                 });
-
-            }
-            else
+             
+          /*  else
             {
                 app.UseExceptionHandler("/Error");
                 app.UseHsts();
-            }  
+            }*/
+             
             app.UseHttpsRedirection();
 
             app.UseRouting();

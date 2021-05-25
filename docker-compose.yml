@@ -1,0 +1,16 @@
+version: '3.4'
+
+services:
+  finsearchapi:
+    image: ${DOCKER_REGISTRY-}finsearchapi
+    build:
+      context: .
+      dockerfile: Dockerfile
+  ms-sql-server:
+    image: ${DOCKER_REGISTRY-}mcr.microsoft.com/mssql/server:2017-latest
+    environment:
+      ACCEPT_EULA: "Y"
+      SA_PASSWORD: "Pa55w0rd2021"
+      MSSQL_QID: Express
+    ports:
+      - "1433:1433"

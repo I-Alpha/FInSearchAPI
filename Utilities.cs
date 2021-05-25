@@ -8,15 +8,19 @@ using System.Collections.Generic;
 using System.Data;
 using System.Globalization;
 using System.IO;
-using System.Linq;
+using System.Linq; 
+using System.Reflection; 
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualBasic.FileIO;
-using System.Reflection;
-using System.Collections;
 
-namespace FinSearchDataAccessLibrary
+namespace FinSearchDataAPI
 {
     public static class Utilities
     {
+        static ILogger Logger = new LoggerFactory().CreateLogger("Utilies");
+         
+        public static bool DatabaseISeeded { get; private set; }
+
         public static string Serialize(this object metaToken)
         {
             if (metaToken == null)
@@ -24,6 +28,16 @@ namespace FinSearchDataAccessLibrary
                 return null;
             }
             return JsonConvert.SerializeObject(metaToken);
+
+        }
+
+        public static JObject Deserialize(this object metaToken)
+        {
+            if (metaToken == null)
+            {
+                return null;
+            }
+            return JObject.FromObject(metaToken);
 
         }
 
@@ -68,9 +82,9 @@ namespace FinSearchDataAccessLibrary
 
             return new Dictionary<string, string> { { token.Path, value } };
         }
-   
-         
-        
+
+
+
 
         /// <summary>
         /// Takes the full name of a resource and loads it in to a stream.
@@ -98,28 +112,49 @@ namespace FinSearchDataAccessLibrary
 
         public static void SeedLookUpData(string path, FinSearchDBContext FinSearchDbContext)
         {
+
+            if (DatabaseISeeded)
+                return;
             //Should only be used on creation of database from local file.
 
+            string json = GetCSVJson(path);
+
+            // and add to db
+            AddLookUpDataFromJson(json, FinSearchDbContext);
+            DatabaseISeeded = true;
+        }
+
+        private static string GetCSVJson(string path)
+        {
             //For loading csv lookupTable data at the creation of database
             var g = GetDataTableFromCSVFile(path);
 
             // serialize datatable
             string json = JsonConvert.SerializeObject(g, Formatting.Indented);
-
-            // and add to db
-            Utilities.AddLookUpDataFromJson(json, FinSearchDbContext);
+            return json;
         }
 
         public static void AddLookUpDataFromJson(string json, FinSearchDBContext context)
         {
-            /// Serialize json Add look up data to database.  
-            var dataCollection = (JsonConvert.DeserializeObject<List<LookUpRow>>(json)).Where(x => x.CORPEXCHANGE != null).ToList();
+            List<LookUpRow> dataCollection = GetLookUpRowCollection(json);
             using (context)
             {
                 context.BloomBergLookUp.AddRange(dataCollection);
                 context.SaveChanges();
             }
-            context.DisposeAsync();
+            context.DisposeAsync();  
+        }
+         
+        public static List<LookUpRow> GetExcelData(string path)
+            {
+                return GetLookUpRowCollection(GetCSVJson(path));
+            }
+
+
+    private static List<LookUpRow> GetLookUpRowCollection(string json)
+        {
+            /// Serialize json Add look up data to database.  
+            return (JsonConvert.DeserializeObject<List<LookUpRow>>(json)).Where(x => x.CORPEXCHANGE != null).ToList();
         }
 
         private static DataTable GetDataTableFromCSVFile(string csv_file_path)
@@ -159,10 +194,14 @@ namespace FinSearchDataAccessLibrary
             }
             catch (Exception ex)
             {
+
             }
 
             return csvData;
         }
 
+
+
     }
+  
 } 
